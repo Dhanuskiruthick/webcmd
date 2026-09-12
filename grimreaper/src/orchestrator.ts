@@ -11,12 +11,14 @@ import type { ManagedSeatCandidate, PotentialSavings, SaaSSeat } from './models.
 import { RiskEngine, type RiskEngineOptions } from './risk-engine.ts';
 import { calculatePotentialSavings } from './savings.ts';
 import { WebcmdCliWrapper } from './webcmd-cli.ts';
-import { GitHubAdapter, type GitHubAuditOptions, type GitHubAuditResult, type OffboardingExecutionResult } from './adapters/github.ts';
-import { SlackAdapter, type SlackAuditOptions, type SlackAuditResult } from './adapters/slack.ts';
+import { GITHUB_VERIFIED_FIELDS, GitHubAdapter, type GitHubAuditOptions, type GitHubAuditResult, type OffboardingExecutionResult } from './adapters/github.ts';
+import { SLACK_VERIFIED_FIELDS, SlackAdapter, type SlackAuditOptions, type SlackAuditResult } from './adapters/slack.ts';
+import { getGitHubDemoSeats, getSlackDemoSeats } from './demo-data.ts';
 
 export interface OrchestratorOptions {
   riskEngineOptions?: RiskEngineOptions;
   webcmdWrapper?: WebcmdCliWrapper;
+  demoMode?: boolean;
 }
 
 export interface GitHubOrchestrationResult {
@@ -48,6 +50,7 @@ export class GrimReaperOrchestrator {
   private readonly riskEngineOptions?: RiskEngineOptions;
   private readonly auditLogger: AuditLogger;
   private readonly webcmdWrapper: WebcmdCliWrapper;
+  private readonly demoModeOverride?: boolean;
   private readonly candidates: Map<string, ManagedSeatCandidate> = new Map();
 
   constructor(options: OrchestratorOptions = {}) {
@@ -55,6 +58,11 @@ export class GrimReaperOrchestrator {
     this.riskEngine = new RiskEngine(options.riskEngineOptions?.inactivity_threshold_days);
     this.auditLogger = new AuditLogger();
     this.webcmdWrapper = options.webcmdWrapper ?? new WebcmdCliWrapper();
+    this.demoModeOverride = options.demoMode;
+  }
+
+  isDemoMode(): boolean {
+    return this.demoModeOverride ?? (process.env.DEMO_MODE === 'true');
   }
 
   getWebcmd(): WebcmdCliWrapper {
@@ -73,6 +81,53 @@ export class GrimReaperOrchestrator {
    * 4. Logs audit records.
    */
   async auditGitHub(options: GitHubAuditOptions): Promise<GitHubOrchestrationResult> {
+    if (this.isDemoMode()) {
+      const seats = getGitHubDemoSeats(options.orgName);
+      const candidates = this.ingestSeats(seats, this.riskEngineOptions);
+      const potential_savings = calculatePotentialSavings(candidates);
+      const flaggedCount = candidates.filter((c) => c.risk.flagged).length;
+
+      const auditResult: GitHubAuditResult = {
+        platform: 'github',
+        org_name: options.orgName,
+        total_members: seats.length,
+        seats,
+        evidence: {
+          pages_scraped: 1,
+          fields_discovered: GITHUB_VERIFIED_FIELDS,
+          webcmd_commands_issued: ['[DEMO MODE] Simulated GitHub Audit evidence query'],
+          auth_verified: true,
+          read_only_confirmed: true,
+          raw_members_count: seats.length,
+          audit_log_queries_count: seats.length,
+          audit_log_events_found: seats.filter((s) => s.last_activity).length,
+          audit_log_access_denied: false,
+        },
+        authRequired: false,
+      };
+
+      this.auditLogger.log({
+        platform: 'github',
+        user_id: 'system',
+        action: 'GITHUB_AUDIT_COMPLETED_DEMO',
+        risk_decision: `[DEMO MODE] Audited org '${options.orgName}': Discovered ${seats.length} demo seats (${flaggedCount} flagged)`,
+        savings_estimate: potential_savings,
+        approval_state: 'DISCOVERED',
+      });
+
+      return {
+        audit_result: auditResult,
+        candidates,
+        potential_savings,
+        summary: {
+          total_seats: seats.length,
+          flagged_seats: flaggedCount,
+          auth_required: false,
+          audit_log_access_denied: false,
+        },
+      };
+    }
+
     const adapter = new GitHubAdapter(this.webcmdWrapper);
     const auditResult = await adapter.auditOrganization(options);
 
@@ -135,6 +190,51 @@ export class GrimReaperOrchestrator {
    * 4. Logs audit records.
    */
   async auditSlack(options: SlackAuditOptions): Promise<SlackOrchestrationResult> {
+    if (this.isDemoMode()) {
+      const seats = getSlackDemoSeats(options.workspaceSlug, options.monthlyCostPerSeat);
+      const candidates = this.ingestSeats(seats, this.riskEngineOptions);
+      const potential_savings = calculatePotentialSavings(candidates);
+      const flaggedCount = candidates.filter((c) => c.risk.flagged).length;
+
+      const auditResult: SlackAuditResult = {
+        platform: 'slack',
+        workspace_slug: options.workspaceSlug,
+        total_members: seats.length,
+        seats,
+        evidence: {
+          pages_scraped: 1,
+          fields_discovered: SLACK_VERIFIED_FIELDS,
+          webcmd_commands_issued: ['[DEMO MODE] Simulated Slack Audit evidence query'],
+          auth_verified: true,
+          read_only_confirmed: true,
+          raw_members_count: seats.length,
+          access_denied: false,
+        },
+        authRequired: false,
+      };
+
+      this.auditLogger.log({
+        platform: 'slack',
+        user_id: 'system',
+        action: 'SLACK_AUDIT_COMPLETED_DEMO',
+        risk_decision: `[DEMO MODE] Audited Slack workspace '${options.workspaceSlug}': Discovered ${seats.length} demo seats (${flaggedCount} flagged)`,
+        savings_estimate: potential_savings,
+        approval_state: 'DISCOVERED',
+      });
+
+      return {
+        audit_result: auditResult,
+        candidates,
+        potential_savings,
+        summary: {
+          total_seats: seats.length,
+          flagged_seats: flaggedCount,
+          auth_required: false,
+          access_denied: false,
+        },
+      };
+    }
+
     const adapter = new SlackAdapter(this.webcmdWrapper);
     const auditResult = await adapter.auditWorkspace(options);
 
@@ -380,6 +480,33 @@ export class GrimReaperOrchestrator {
       });
 
       return { result: unsupportedResult, candidate };
+    }
+
+    if (this.isDemoMode()) {
+      return this.executeApprovedOffboarding(userId, async (approvedCand) => {
+        const targetName =
+          (approvedCand.seat.metadata?.github_username as string) ||
+          (approvedCand.seat.metadata?.slack_user_id as string) ||
+          approvedCand.seat.display_name;
+
+        const demoResult: OffboardingExecutionResult = {
+          status: 'EXECUTED',
+          platform: approvedCand.seat.platform,
+          user_id: userId,
+          verified: true,
+          message: `[DEMO MODE] Successfully simulated offboarding execution and post-verification for target user '${targetName}'.`,
+          details: {
+            platform: approvedCand.seat.platform,
+            mode: 'demo',
+            action: 'offboarding',
+            target: targetName,
+            result: 'success',
+            verification: 'passed',
+          },
+          webcmd_commands_issued: ['[DEMO MODE] Simulated destructive offboarding action execution'],
+        };
+        return demoResult;
+      });
     }
 
     return this.executeApprovedOffboarding(userId, async (approvedCand) => {

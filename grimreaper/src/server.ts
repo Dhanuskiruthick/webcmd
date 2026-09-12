@@ -74,6 +74,7 @@ export function createGrimReaperServer(orchestratorInstance?: GrimReaperOrchestr
         const inactive_candidates = candidates.filter((c) => c.risk.flagged).length;
 
         sendJson(200, {
+          demo_mode: orchestrator.isDemoMode(),
           summary: {
             total_seats,
             inactive_candidates,

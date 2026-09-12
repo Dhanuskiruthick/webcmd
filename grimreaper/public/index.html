@@ -408,6 +408,9 @@
     <div class="wordmark serif">
       <div class="scythe">&#9878;</div>
       <div class="brand">SaaS <span>GrimReaper</span></div>
+      <span id="demo-mode-badge" class="mono" style="display:none; font-size:11px; font-weight:600; padding:3px 8px; border-radius:12px; background:rgba(201,162,39,0.2); color:var(--gold); border:1px solid rgba(201,162,39,0.35);">
+        DEMO MODE &mdash; Simulated Workspace
+      </span>
     </div>
     <div class="header-right">
       <button class="notification-btn" id="notif-btn" title="Alerts">
@@ -855,6 +858,11 @@
 
       candidates = data.candidates || [];
       auditLogs = data.logs || [];
+
+      var demoBadge = document.getElementById('demo-mode-badge');
+      if (demoBadge) {
+        demoBadge.style.display = data.demo_mode ? 'inline-block' : 'none';
+      }
 
       var summary = data.summary || {};
       var totalSeats = summary.total_seats || candidates.length;
