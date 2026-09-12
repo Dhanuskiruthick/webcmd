@@ -1,160 +1,686 @@
-<img width="1280" height="640" alt="Webcmd — stop paying agents to rediscover the web" src="docs/readme-hero-v2.png" />
+# SaaS GrimReaper
 
+## Ghost License & Shadow IT Offboarding Agent
 
-<p align="center">
-  <a href="https://www.npmjs.com/package/@agentrhq/webcmd">
-    <img alt="NPM version" src="https://img.shields.io/npm/v/@agentrhq/webcmd.svg?style=for-the-badge&color=1E88E5&labelColor=000000">
-  </a>
-  <a href="https://webcmd.dev/docs">
-    <img alt="Documentation" src="https://img.shields.io/badge/docs-webcmd.dev-7C3AED.svg?style=for-the-badge&labelColor=000000">
-  </a>
-  <a href="https://github.com/agentrhq/webcmd/blob/main/LICENSE">
-    <img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-1E88E5.svg?style=for-the-badge&labelColor=000000">
-  </a>
-  <a href="https://discord.gg/9YP2C9tvMp">
-    <img alt="Join the community on Discord" src="https://img.shields.io/badge/Join%20the%20community-5865F2.svg?style=for-the-badge&logo=discord&logoColor=white&labelColor=000000&logoWidth=20">
-  </a>
-  <a href="https://x.com/agentrhq">
-    <img alt="Follow AgentR on X" src="https://img.shields.io/badge/Built%20by%20%40agentrhq-000000.svg?style=for-the-badge&logo=x&logoColor=white&labelColor=000000&logoWidth=20">
-  </a>
-</p>
+> **Investigate automatically. Decide with evidence. Act only with approval. Verify everything.**
 
-# Webcmd
+Organizations accumulate SaaS accounts and paid seats that may no longer be actively used. Finding these accounts, validating whether they are genuinely inactive, estimating potential savings, and safely offboarding them is repetitive administrative work — and automating it carelessly can create security and operational risk.
 
-**Self-learning browser infra for AI agents.**
-
-Webcmd learns the navigational context of websites as agents use them, then
-turns that knowledge into local memory for faster, cheaper, more reliable
-browser automation. The goal is simple: stop making agents rediscover the same
-sites on every run and cut browser-agent token spend by up to 90%.
-
-Webcmd pairs live browser control with a self-learning memory layer:
-
-| Layer | Scenario | What Webcmd Helps With |
-| --- | --- | --- |
-| 0. Live browser control | The site is unfamiliar. | Use `webcmd browser` to inspect, click, type, extract, capture network calls, and complete the task in a real browser. |
-| 1. Sitemap memory | The site is familiar, but the action space is not fully known. | Capture an agent-facing sitemap of observed pages, states, actions, workflows, APIs, pitfalls, and fallback paths. |
-
-## Demo
-
-https://github.com/user-attachments/assets/bdb65307-9e2a-4d58-9175-45d59528ae37
-
-## Quick Start
-
-### Agent prompt
+**SaaS GrimReaper** is a browser-based SaaS security and IT automation agent that investigates workspaces such as GitHub and Slack, collects user and activity evidence, identifies potentially abandoned paid seats, evaluates risk, estimates potential savings, and guides approved offboarding through a human-in-the-loop workflow.
 
 ```text
-Fetch and follow https://raw.githubusercontent.com/agentrhq/webcmd/main/start.md to set up Webcmd end to end.
+Browser Evidence
+       │
+       ▼
+Risk Assessment
+       │
+       ▼
+Potential Savings
+       │
+       ▼
+Human Approval
+       │
+       ▼
+Safe Action
+       │
+       ▼
+Post-Verification
+       │
+       ▼
+Audit Trail
 ```
 
-### Manual
+---
 
-Webcmd requires Node.js 20.6+.
+## Why GrimReaper?
 
-```bash
-npm install -g @agentrhq/webcmd
-webcmd skills add
-```
+SaaS administration contains a large amount of repetitive browser work:
 
-When prompted, choose Claude, Codex, another supported harness, or a custom
-skills path. That installs exactly one skill, `webcmd-browser`.
+* Find users and their roles
+* Check activity evidence
+* Determine whether a seat is paid or free
+* Identify exceptions
+* Assess inactivity risk
+* Estimate potential savings
+* Obtain authorization
+* Perform the administrative action
+* Verify the result
+* Record what happened
 
-Load or tag `webcmd-browser` only for live browser work, then describe the
-outcome you want. Installation and setup commands do not require that skill.
+The difficult part is not clicking **Delete**.
+
+The difficult part is deciding **whether deletion is actually safe**.
+
+> **GrimReaper automates the investigation while keeping destructive authority with a human.**
+
+---
+
+# The Solution
+
+GrimReaper separates the workflow into distinct stages:
 
 ```text
-Use webcmd to research the latest discussions about browser automation across Hacker News and Reddit, then return a concise comparison with source links.
+Evidence
+   ↓
+Decision
+   ↓
+Authorization
+   ↓
+Action
+   ↓
+Verification
+   ↓
+Audit
 ```
 
-## What You Can Ask
+This prevents browser automation from becoming uncontrolled account deletion.
 
-- “Use webcmd to research agentic browser automation on PubMed and return the title, authors, publication date, abstract, and URL for each result.”
-- “Use webcmd to find active AI infrastructure companies in the YC company directory and return the company, batch, description, location, profile URL, and source links. Keep it read-only.”
-- “Use webcmd to look up parts on Grainger by part number and return price, stock, minimum order quantity, lead time, and product URL.”
-- “Use webcmd with my logged-in `work` profile to summarize unread LinkedIn messages from the last seven days and return the sender, subject or opening text, received time, and conversation URL.”
-- “Use webcmd to check Grainger part prices and SAP Ariba purchase-order status, then return a combined summary.”
+The system:
 
-## See It in Action
+1. Audits a SaaS workspace
+2. Normalizes platform evidence into a common model
+3. Evaluates the account using security/risk policies
+4. Calculates potential license savings
+5. Flags candidates for review
+6. Requires explicit human approval
+7. Executes only approved actions
+8. Verifies the resulting state
+9. Records the decision and action in an audit trail
+
+---
+
+# Architecture
 
 ```text
-Use webcmd with my logged-in `social` profile to collect my recent X bookmarks and return the author, text, and URL.
+                         ┌──────────────────┐
+                         │       User       │
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                         ┌──────────────────┐
+                         │ GrimReaper UI    │
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                         ┌──────────────────┐
+                         │   Orchestrator   │
+                         └────────┬─────────┘
+                                  │
+                    ┌─────────────┴─────────────┐
+                    │                           │
+                    ▼                           ▼
+             ┌──────────────┐           ┌──────────────┐
+             │ Webcmd       │           │ Webcmd       │
+             │ GitHub       │           │ Slack        │
+             │ Adapter      │           │ Adapter      │
+             └──────┬───────┘           └──────┬───────┘
+                    │                           │
+                    └─────────────┬─────────────┘
+                                  ▼
+                         ┌──────────────────┐
+                         │ Evidence /       │
+                         │ SaaSSeat         │
+                         │ Normalization    │
+                         └────────┬─────────┘
+                                  ▼
+                         ┌──────────────────┐
+                         │   Risk Engine    │
+                         └────────┬─────────┘
+                                  ▼
+                         ┌──────────────────┐
+                         │ Savings Engine   │
+                         └────────┬─────────┘
+                                  ▼
+                         ┌──────────────────┐
+                         │ Human Approval   │
+                         │      Gate        │
+                         └────────┬─────────┘
+                                  ▼
+                         ┌──────────────────┐
+                         │ Safe Execution   │
+                         └────────┬─────────┘
+                                  ▼
+                         ┌──────────────────┐
+                         │ Post-Verification│
+                         └────────┬─────────┘
+                                  ▼
+                         ┌──────────────────┐
+                         │    Audit Log     │
+                         └──────────────────┘
 ```
 
-The agent uses the logged-in profile to complete the task in a real browser.
-Along the way, Webcmd quietly retains useful navigation context so later agents
-can avoid repeating the same exploration.
+### Core Components
 
-## Where Webcmd Works
+| Component                  | Responsibility                                       |
+| -------------------------- | ---------------------------------------------------- |
+| **Webcmd Layer**           | Browser-based SaaS interaction                       |
+| **Platform Adapters**      | GitHub and Slack-specific auditing/actions           |
+| **SaaSSeat Model**         | Normalized representation of SaaS users/seats        |
+| **Risk Engine**            | Determines whether a seat should be kept or reviewed |
+| **Savings Engine**         | Calculates potential license savings                 |
+| **Approval State Machine** | Controls authorization before destructive actions    |
+| **Execution Layer**        | Performs approved offboarding safely                 |
+| **Verification Layer**     | Confirms the expected post-action state              |
+| **Audit Logger**           | Records decisions and actions                        |
 
-Webcmd can work through authenticated browser sessions across research, social,
-AI, shopping, and booking products.
+---
 
-| Group | Supported surfaces | Representative outcomes |
-| --- | --- | --- |
-| research and communities | Hacker News, Reddit, PubMed | Compare current discussions, find primary research, and return concise summaries with source links. |
-| social and professional | X/Twitter, LinkedIn, TikTok | Collect bookmarks, monitor public posts, or research people and creators with a named profile when needed. |
-| AI tools | ChatGPT, Claude, Gemini, NotebookLM | Retrieve conversations, research outputs, notebooks, and generated materials from the tools you already use. |
-| shopping and bookings | Amazon, Blinkit, Zepto, BigBasket, District, Practo | Compare products, availability, prices, appointments, events, and delivery options. |
+# Browser Agent Architecture
 
-This list is illustrative. Webcmd can operate other websites through the same
-live browser workflow.
+GrimReaper is designed around **browser-driven administrative workflows**.
 
-## How Self-Learning Works
+The Webcmd integration provides the browser interaction layer used by the platform adapters.
 
-<img width="1672" height="941" alt="How Webcmd learns: load memory, use the live web, keep useful learnings, and help the next agent" src="docs/readme-self-learning.png" />
+The implementation includes:
 
-Learning stays quiet and selective: the live browser is always truth, Webcmd
-never explores just to learn, and a memory failure never blocks the task. First
-access may use a Webcmd Cloud seed; subsequent learning stays local.
+* Webcmd CLI integration
+* Authenticated browser sessions/profiles
+* Browser-based auditing
+* Platform-specific GitHub and Slack adapters
+* Isolated execution sessions
+* Timeout and retry handling
+* Authentication/access detection
+* Post-action verification
 
-For local, multi-step browser exploration, agents can send one sandboxed
-Playwright-style program to an explicit browser session:
+The browser is treated as the operational interface, while the GrimReaper backend controls the decision and authorization logic.
 
-```bash
-webcmd --profile work session create "Work Project" -f json
-# id: work-project-k7
-webcmd --profile work --session work-project-k7 browser tabs
-webcmd --profile work --session work-project-k7 browser run --file explore.js
-printf 'return await page.title();' \
-  | webcmd --profile work --session work-project-k7 browser run --stdin
-webcmd --profile work session close work-project-k7
+> The current implementation does **not** claim self-learning or automatic workflow recovery.
+
+---
+
+# Evidence-Driven Risk Engine
+
+GrimReaper does not simply identify old accounts and delete them.
+
+It evaluates evidence.
+
+| Situation                                 | Decision           |
+| ----------------------------------------- | ------------------ |
+| Active paid seat                          | `KEEP`             |
+| Paid seat inactive ≥ configured threshold | `REVIEW`           |
+| Free / exempt seat                        | `KEEP`             |
+| Activity evidence unavailable             | `NO_DATA` / `KEEP` |
+
+## NO_DATA ≠ INACTIVE
+
+This is one of GrimReaper's most important safety rules.
+
+A missing activity timestamp is an **absence of evidence**, not proof of inactivity.
+
+Therefore:
+
+```text
+Missing Activity Evidence
+          │
+          ▼
+       NO_DATA
+          │
+          ▼
+      FAIL SAFE
+          │
+          ▼
+     DO NOT OFFBOARD
 ```
 
-Profiles are cookie jars; Sessions are independent browser windows within a
-profile, so Session IDs are immutable, Profile-scoped, and safe to reuse for
-that Session's lifetime. Parallel agents should create separate Sessions.
-Raw browser commands require an explicit readable Session ID.
+This prevents the agent from making a destructive decision based on an assumption.
 
-## Benchmarks
+The risk engine supports a configurable inactivity threshold and produces risk assessments that are consumed by the existing orchestration and approval workflow.
 
-On [BU Bench V1](https://github.com/browser-use/benchmark#bu-bench-v1), a
-100-task browser automation benchmark, Webcmd recorded the highest accuracy and
-lowest estimated controller cost per completed task, and fewest agent turns per
-completed task in this comparison.
+---
 
-![BU Bench V1 comparison: webcmd leads accuracy at 67%, cost per completed task at $0.255, and agent turns per completed task at 9.8](./benchmarks/charts/bu-bench-readme.svg)
+# Potential Savings
 
-All tools used the same Pi controller, controller model, Codex `gpt-5.4` judge,
-and CloakBrowser engine. This is a stronger judge than the original BU Bench
-setup, whose [current runner uses Gemini 2.5 Flash](https://github.com/browser-use/benchmark/blob/main/run_eval.py#L37-L38).
-Accuracy is passed tasks out of 100. Cost and agent turns are averaged over
-completed tasks; cost excludes judge usage. See the
-[benchmark report](./benchmarks/README.md) for category results, methodology,
-architectural analysis, and reproduction steps.
+Once a seat is determined to be an eligible paid candidate, GrimReaper calculates **potential** savings.
 
-## Learn More
+```text
+Potential Annual Savings
+=
+Eligible Monthly Seat Cost × 12
+```
 
-Webcmd Cloud can run supported commands and browser sessions on hosted infrastructure. It is in active development and is not yet stable.
+For example:
 
-- [Prompt Cookbook](https://webcmd.dev/docs/agent-prompts)
-- [How Webcmd Works](https://webcmd.dev/docs/concepts)
-- [Local or Cloud](https://webcmd.dev/docs/local-or-cloud)
-- [Command Surface](https://webcmd.dev/docs/cli-reference)
+```text
+$21/month × 12
+=
+$252 potential annual savings
+```
 
-## Contributing
+The system deliberately calls these **potential savings** rather than guaranteed savings.
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+Actual billing impact depends on the SaaS provider, subscription plan, billing cycle, and account-management behavior.
 
-## License
+---
 
-Released under the terms in [`LICENSE`](./LICENSE).
+# Human-in-the-Loop Safety
+
+GrimReaper is **not an autonomous deletion bot**.
+
+Destructive actions are controlled by an explicit approval state machine.
+
+```text
+DISCOVERED
+    │
+    ▼
+FLAGGED
+    │
+    ▼
+PENDING_APPROVAL
+    │
+    ├──────────────► REJECTED
+    │
+    ▼
+APPROVED
+    │
+    ▼
+EXECUTED
+    │
+    ▼
+VERIFIED
+```
+
+### Security Controls
+
+**Backend Authorization**
+
+The backend is authoritative. A frontend request cannot simply declare that an account is approved.
+
+**Explicit Approval**
+
+A candidate must reach the `APPROVED` state before execution.
+
+**NO_DATA Protection**
+
+Candidates without sufficient activity evidence are not treated as inactive and cannot be destructively executed through the normal flow.
+
+**Fail Closed**
+
+Execution failures do not silently become successful offboarding operations.
+
+**Post-Verification**
+
+Execution is not considered complete until the expected state is verified.
+
+**Auditability**
+
+Important decisions and actions are recorded in the audit log.
+
+> **Automate investigation. Keep authority with the human.**
+
+---
+
+# GitHub Integration
+
+GrimReaper includes a GitHub platform adapter for browser-based workspace auditing and approved member offboarding.
+
+The adapter supports the normalized GrimReaper workflow:
+
+```text
+GitHub Workspace
+      ↓
+Audit Evidence
+      ↓
+SaaSSeat
+      ↓
+Risk Assessment
+      ↓
+Approval
+      ↓
+Approved Action
+      ↓
+Post-Verification
+      ↓
+Audit Log
+```
+
+In real adapter mode, approved execution is performed through an isolated browser session and followed by verification.
+
+---
+
+# Slack Integration
+
+GrimReaper also includes a Slack platform adapter.
+
+The Slack adapter follows the same normalized workflow while keeping platform-specific behavior inside the adapter layer.
+
+```text
+Slack Workspace
+      ↓
+Audit Evidence
+      ↓
+SaaSSeat
+      ↓
+Risk Assessment
+      ↓
+Approval
+      ↓
+Safe Deactivation
+      ↓
+Post-Verification
+      ↓
+Audit Log
+```
+
+Unsupported or restricted cases fail safely instead of pretending that an action succeeded.
+
+Provider capabilities can vary depending on workspace configuration and subscription tier.
+
+---
+
+# Safe Demo Mode
+
+For the hackathon live demonstration, GrimReaper provides an isolated **DEMO_MODE**.
+
+This allows the complete workflow to be demonstrated without modifying real user accounts.
+
+```powershell
+$env:DEMO_MODE="true"
+```
+
+Demo mode uses synthetic GitHub and Slack workspace records containing:
+
+* Active paid users
+* Inactive paid users
+* Free/exempt users
+* Missing-activity `NO_DATA` cases
+* Potential savings
+* Approval workflow
+* Simulated execution
+* Post-verification
+* Audit logging
+
+The demo data still passes through the same application pipeline:
+
+```text
+Demo Evidence
+     ↓
+SaaSSeat
+     ↓
+Risk Engine
+     ↓
+Savings Engine
+     ↓
+Approval
+     ↓
+Simulated Execution
+     ↓
+Verification
+     ↓
+Audit Log
+```
+
+### Demo Safety
+
+`DEMO_MODE`:
+
+* Uses synthetic identities
+* Does not modify real GitHub accounts
+* Does not modify real Slack accounts
+* Does not invoke real destructive platform actions
+* Still enforces the backend approval state
+* Still demonstrates post-verification
+* Still records audit events
+
+The real platform adapter path remains preserved when demo mode is disabled.
+
+---
+
+# Judge Demo — 90 Seconds
+
+The strongest demonstration flow is:
+
+```text
+1. Open GrimReaper
+        ↓
+2. Audit GitHub
+        ↓
+3. Show active + inactive + NO_DATA users
+        ↓
+4. Audit Slack
+        ↓
+5. Select an inactive paid seat
+        ↓
+6. Show evidence + risk
+        ↓
+7. Show potential savings
+        ↓
+8. Approve candidate
+        ↓
+9. REAP
+        ↓
+10. Show verification
+        ↓
+11. Show audit log
+```
+
+### The Two Moments to Highlight
+
+#### 1. NO_DATA
+
+> "GrimReaper does not confuse missing evidence with inactivity."
+
+#### 2. Human Approval
+
+> "Even when the agent identifies a risky candidate, it cannot perform the destructive action until the backend records explicit approval."
+
+These demonstrate that the system is designed around **safe automation**, not simply automation.
+
+---
+
+# Quick Start
+
+## Requirements
+
+* Node.js
+* Webcmd
+* Windows PowerShell for the demonstrated setup
+
+## Run Demo Mode
+
+From the project directory:
+
+```powershell
+cd C:\webcmd\grimreaper
+
+$env:DEMO_MODE="true"
+
+node --experimental-strip-types src/server.ts
+```
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+---
+
+# Run Tests
+
+Execute the complete test suite:
+
+```powershell
+node --test --experimental-strip-types tests/*.test.ts
+```
+
+Current verified result:
+
+```text
+76 tests
+76 passing
+0 failing
+```
+
+---
+
+# Testing
+
+The automated test suite covers the major security and application layers, including:
+
+* Core foundation
+* SaaS seat normalization
+* Risk engine
+* Savings calculation
+* GitHub adapter
+* Slack adapter
+* Orchestrator integration
+* Server/UI integration
+* Approval enforcement
+* Safe execution
+* NO_DATA handling
+* Post-execution verification
+* Audit logging
+* Demo mode
+* Execution guardrails
+
+The current verified baseline is:
+
+> **76 / 76 tests passing — 0 failures**
+
+---
+
+# Security Design Principles
+
+## 1. Fail Safe
+
+Missing evidence is never automatically interpreted as inactivity.
+
+## 2. Human Authorization
+
+Destructive actions require explicit backend approval.
+
+## 3. Least Action
+
+Only the approved target can proceed to execution.
+
+## 4. Verify
+
+The system checks the resulting state instead of assuming execution succeeded.
+
+## 5. Auditability
+
+Decisions, actions and verification results are recorded.
+
+## 6. Credential Safety
+
+Credentials and secrets are not hard-coded into the project.
+
+---
+
+# Tech Stack
+
+The current implementation uses:
+
+* **TypeScript**
+* **Node.js**
+* **Webcmd**
+* **HTML / CSS / JavaScript**
+* **Node.js HTTP server**
+* **Node native test runner**
+
+The project intentionally keeps the core architecture lightweight so the browser-agent workflow and security controls remain visible and understandable.
+
+---
+
+# Project Structure
+
+```text
+grimreaper/
+│
+├── src/
+│   ├── adapters/
+│   │   ├── github.ts
+│   │   └── slack.ts
+│   │
+│   ├── approval.ts
+│   ├── audit-logger.ts
+│   ├── demo-data.ts
+│   ├── models.ts
+│   ├── orchestrator.ts
+│   ├── risk-engine.ts
+│   ├── savings.ts
+│   ├── server.ts
+│   └── webcmd-cli.ts
+│
+├── public/
+│   └── index.html
+│
+├── tests/
+│
+├── docs/
+│
+├── engine/
+│   └── reference/
+│
+└── README.md
+```
+
+### Key Files
+
+| File                 | Purpose                                         |
+| -------------------- | ----------------------------------------------- |
+| `orchestrator.ts`    | Coordinates the complete workflow               |
+| `risk-engine.ts`     | Evidence-based risk evaluation                  |
+| `savings.ts`         | Potential savings calculation                   |
+| `approval.ts`        | Approval state machine and execution guardrails |
+| `audit-logger.ts`    | Audit trail                                     |
+| `webcmd-cli.ts`      | Webcmd browser integration                      |
+| `adapters/github.ts` | GitHub-specific browser workflow                |
+| `adapters/slack.ts`  | Slack-specific browser workflow                 |
+| `demo-data.ts`       | Isolated synthetic demo workspace               |
+| `server.ts`          | Application server/API                          |
+| `public/index.html`  | GrimReaper dashboard                            |
+
+---
+
+# Implemented
+
+* [x] Browser-based SaaS auditing
+* [x] GitHub adapter
+* [x] Slack adapter
+* [x] SaaSSeat normalization
+* [x] Evidence-driven risk assessment
+* [x] Configurable inactivity threshold
+* [x] NO_DATA safety handling
+* [x] Potential savings calculation
+* [x] Human approval state machine
+* [x] Backend execution authorization
+* [x] Safe offboarding execution layer
+* [x] Post-execution verification
+* [x] Audit logging
+* [x] Safe DEMO_MODE
+* [x] Automated tests
+
+---
+
+# Future Work
+
+The current prototype can be extended with:
+
+* Self-learning workflow recovery
+* Additional SaaS integrations
+* Richer billing verification
+* Configurable organization policies
+* Enterprise identity and billing integrations
+* Production deployment and observability
+
+These are future improvements and are **not represented as current implemented functionality**.
+
+---
+
+# Why It Matters
+
+SaaS administration is full of repetitive browser work.
+
+GrimReaper turns that work into an **evidence-driven security workflow** without removing human control over destructive decisions.
+
+It brings together browser automation, risk assessment, cost analysis, approval controls, verification and auditability in a single workflow.
+
+> **GrimReaper is not an auto-delete bot. It automates investigation while keeping destructive authority with a human.**
+
+```text
+Investigate automatically.
+Decide with evidence.
+Act only with approval.
+Verify everything.
+```
