@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SaaS GrimReaper — Reclaim Your Spend</title>
+<style>
+  /* ── DESIGN TOKENS ── */
+  :root {
+    --ink: #0C1012;
+    --panel: #131B1E;
+    --panel-raised: #182022;
+    --line: #232E32;
+    --line-bright: #2E3E44;
+    --muted: #6E7E84;
+    --muted-bright: #8B979C;
+    --text: #EDF2F0;
+    --text-dim: #B8C4C0;
+    --gold: #C9A227;
+    --gold-dim: #8A7526;
+    --gold-glow: rgba(201,162,39,0.18);
+    --reap: #A8402E;
+    --reap-bright: #C2543F;
+    --reap-glow: rgba(168,64,46,0.25);
+    --sage: #5C8265;
+    --sage-bright: #78A583;
+    --sage-glow: rgba(92,130,101,0.2);
+    --radius: 4px;
+    --radius-lg: 8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--ink); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif;
+    line-height: 1.5; overflow-x: hidden;
+  }
+  .serif { font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; font-variant-numeric: tabular-nums; }
+
+  /* CANVAS */
+  #bg-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.35; }
+
+  /* LAYOUT */
+  .app { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 28px 200px; }
+
+  /* HEADER */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 28px 0 20px; border-bottom: 1px solid var(--line); gap: 16px;
+  }
+  .wordmark { font-size: 20px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 12px; }
+  .wordmark .scythe {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, #1a0a02, #3a1a10);
+    border: 1px solid var(--reap); display: flex; align-items: center;
+    justify-content: center; font-size: 18px; box-shadow: 0 0 12px var(--reap-glow);
+    animation: pulse-scythe 3s ease-in-out infinite;
+  }
+  @keyframes pulse-scythe {
+    0%,100% { box-shadow: 0 0 12px var(--reap-glow); }
+    50% { box-shadow: 0 0 28px rgba(168,64,46,0.5); }
+  }
+  .wordmark .brand { color: var(--text); }
+  .wordmark .brand span { color: var(--gold); }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .lifetime-badge {
+    text-align: right; background: var(--panel-raised); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 8px 14px; min-width: 140px;
+  }
+  .lifetime-badge .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .lifetime-badge .amt { font-size: 18px; color: var(--sage-bright); display: block; margin-top: 1px; }
+  .notification-btn {
+    position: relative; width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--panel-raised);
+    color: var(--muted-bright); font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .notification-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .notif-dot {
+    position: absolute; top: 4px; right: 4px; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--gold); border: 2px solid var(--ink);
+    animation: notif-pulse 2s ease infinite;
+  }
+  @keyframes notif-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.4); } }
+
+  /* HERO */
+  .hero {
+    padding: 52px 0 40px; border-bottom: 1px solid var(--line);
+    display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: start;
+  }
+  .hero h1 { font-size: 36px; font-weight: 400; line-height: 1.2; margin-bottom: 12px; max-width: 520px; }
+  .hero h1 em { color: var(--reap-bright); font-style: normal; }
+  .hero p { color: var(--muted-bright); font-size: 15px; max-width: 460px; margin-bottom: 28px; }
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* BUTTONS */
+  .btn {
+    border: 1px solid var(--line); background: var(--panel-raised);
+    color: var(--text); padding: 10px 18px; border-radius: var(--radius);
+    font-size: 14px; cursor: pointer; font-family: inherit;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn:hover { border-color: var(--gold-dim); }
+  .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+  .btn-primary {
+    background: var(--gold); border-color: var(--gold); color: #1A1500; font-weight: 700;
+    box-shadow: 0 2px 12px var(--gold-glow);
+  }
+  .btn-primary:hover { background: #DDB236; box-shadow: 0 4px 20px rgba(201,162,39,0.35); }
+  .btn-danger {
+    background: var(--reap); border-color: var(--reap); color: #fff; font-weight: 700;
+    box-shadow: 0 2px 12px var(--reap-glow);
+  }
+  .btn-danger:hover { background: var(--reap-bright); }
+  .btn-ghost { background: transparent; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* MINI STATS */
+  .mini-stats {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    padding: 20px 24px; display: grid; grid-template-columns: repeat(4,1fr); gap: 0;
+  }
+  .mini-stat { padding: 0 18px; border-right: 1px solid var(--line); }
+  .mini-stat:first-child { padding-left: 0; }
+  .mini-stat:last-child { border-right: none; }
+  .mini-stat .ms-val { font-size: 24px; font-weight: 400; }
+  .mini-stat .ms-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .mini-stat .ms-delta { font-size: 10px; margin-top: 4px; }
+  .ms-delta.up { color: var(--reap-bright); }
+  .ms-delta.down { color: var(--sage-bright); }
+
+  /* PLATFORMS */
+  .platforms-section { padding: 32px 0 0; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(152px, 1fr)); gap: 10px; }
+  .plat-card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    padding: 14px 16px; cursor: pointer; position: relative; overflow: hidden;
+    transition: border-color 0.2s, transform 0.15s; user-select: none;
+  }
+  .plat-card:hover { border-color: var(--line-bright); transform: translateY(-2px); }
+  .plat-card.connected { border-color: var(--sage); }
+  .plat-card.connected:hover { border-color: var(--sage-bright); }
+  .shimmer {
+    position: absolute; inset: 0; left: -100%; width: 60%;
+    background: linear-gradient(90deg, transparent, rgba(201,162,39,0.14), transparent);
+    animation: card-sweep 1.4s linear infinite; display: none;
+  }
+  .plat-card.scanning .shimmer { display: block; }
+  @keyframes card-sweep { to { left: 200%; } }
+  .plat-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .plat-icon { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .plat-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+  .plat-card.connected .plat-status-dot { background: var(--sage-bright); box-shadow: 0 0 6px var(--sage); }
+  .plat-name { font-size: 13px; font-weight: 600; }
+  .plat-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .plat-action { margin-top: 10px; font-size: 11px; color: var(--muted); }
+  .plat-card.connected .plat-action { color: var(--sage-bright); }
+  .pi-slack  { background: #2A3B38; color: #9FCFC3; }
+  .pi-figma  { background: #2E2A38; color: #B9A9D6; }
+  .pi-notion { background: #272B2C; color: #AEB6B9; }
+  .pi-gh     { background: #1C2420; color: #8FBD9B; }
+  .pi-linear { background: #1E2038; color: #8BA2E0; }
+  .pi-zoom   { background: #1A2438; color: #7EB2E0; }
+
+  /* AUDIT CONTROL INPUTS */
+  .audit-inputs {
+    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center;
+    background: var(--panel-raised); padding: 12px 16px; border-radius: var(--radius-lg);
+    border: 1px solid var(--line); margin-bottom: 16px;
+  }
+  .audit-inputs input {
+    background: var(--ink); border: 1px solid var(--line); color: var(--text);
+    padding: 6px 10px; border-radius: var(--radius); font-size: 12px; font-family: inherit; width: 140px;
+  }
+
+  /* SCAN PROGRESS */
+  .scan-progress { height: 2px; background: var(--line); border-radius: 2px; margin: 18px 0; overflow: hidden; display: none; }
+  .scan-progress.show { display: block; }
+  .scan-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); border-radius: 2px; transition: width 0.12s ease; }
+
+  /* INSIGHT BANNER */
+  .insight-banner {
+    background: linear-gradient(135deg, rgba(168,64,46,0.12), rgba(168,64,46,0.05));
+    border: 1px solid rgba(168,64,46,0.3); border-radius: var(--radius-lg);
+    padding: 16px 20px; display: none; align-items: center; gap: 14px; margin: 24px 0;
+  }
+  .insight-banner.show { display: flex; }
+  .insight-icon { font-size: 22px; flex-shrink: 0; }
+  .insight-text { font-size: 14px; color: var(--text-dim); }
+  .insight-text strong { color: var(--reap-bright); }
+
+  /* LEDGER */
+  .ledger { margin-top: 8px; display: block; }
+  .ledger-summary {
+    display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0;
+    padding: 28px 0 24px; border-bottom: 1px solid var(--line); align-items: start;
+  }
+  .stat-block { padding-right: 28px; border-right: 1px solid var(--line); margin-right: 28px; }
+  .stat-block:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+  .stat-big { font-size: 42px; font-weight: 400; line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-sub { font-size: 12px; color: var(--muted-bright); margin-top: 8px; }
+  .stat-big.danger { color: var(--reap-bright); }
+  .stat-big.warn { color: var(--gold); }
+  .stat-big.safe { color: var(--sage-bright); }
+  .sparkline-wrap { align-self: end; }
+  .sparkline-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+
+  /* FILTER BAR */
+  .filter-bar { display: flex; align-items: center; gap: 10px; padding: 20px 0 12px; flex-wrap: wrap; }
+  .filter-pill {
+    padding: 5px 12px; border-radius: 20px; font-size: 12px;
+    border: 1px solid var(--line); background: var(--panel);
+    color: var(--muted-bright); cursor: pointer; transition: all 0.15s;
+  }
+  .filter-pill:hover, .filter-pill.active { border-color: var(--gold-dim); color: var(--gold); background: var(--gold-glow); }
+  .filter-search { margin-left: auto; position: relative; }
+  .filter-search input {
+    background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    padding: 7px 10px 7px 30px; border-radius: var(--radius); font-family: inherit;
+    font-size: 12px; width: 180px; transition: border-color 0.15s;
+  }
+  .filter-search input:focus { outline: none; border-color: var(--gold-dim); }
+  .search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 12px; pointer-events: none; }
+
+  /* PLATFORM ROW */
+  .plat-row { border-bottom: 1px solid var(--line); }
+  .plat-row summary {
+    list-style: none; cursor: pointer; padding: 20px 0;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .plat-row summary::-webkit-details-marker { display: none; }
+  .plat-row .name-cell { display: flex; align-items: center; gap: 14px; }
+  .avatar { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .av-slack  { background: #2A3B38; color: #9FCFC3; }
+  .av-figma  { background: #2E2A38; color: #B9A9D6; }
+  .av-notion { background: #272B2C; color: #AEB6B9; }
+  .av-gh     { background: #1C2420; color: #8FBD9B; }
+  .plat-row .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .plat-row .figures { display: flex; align-items: baseline; gap: 28px; }
+  .plat-row .fig { text-align: right; }
+  .plat-row .fig .n { font-size: 20px; }
+  .plat-row .fig .l { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .chev { color: var(--muted); transition: transform 0.2s ease; font-size: 10px; margin-right: 4px; }
+  details[open] .chev { transform: rotate(90deg); }
+  .not-connected { opacity: 0.5; }
+  .not-connected summary { cursor: default; }
+
+  /* USER TABLE */
+  .table-wrap { overflow-x: auto; }
+  table.users { width: 100%; border-collapse: collapse; margin: 4px 0 20px; }
+  table.users th {
+    text-align: left; font-size: 11px; font-weight: 500; color: var(--muted);
+    padding: 8px 12px; border-bottom: 1px solid var(--line);
+    text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+  }
+  table.users th.num, table.users td.num { text-align: right; }
+  table.users td { padding: 12px; font-size: 13px; border-bottom: 1px solid rgba(35,46,50,0.5); vertical-align: middle; transition: background 0.2s; }
+  table.users tr:hover td { background: rgba(255,255,255,0.018); }
+  table.users tr.reaped td { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(110,126,132,0.4); background: rgba(168,64,46,0.04); }
+  table.users tr.reaped .idle-meter { opacity: 0.25; }
+  table.users tr.reaping td { animation: reap-flash 0.4s ease; }
+  @keyframes reap-flash { 0% { background: rgba(168,64,46,0.35); } 100% { background: transparent; } }
+  input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--gold); cursor: pointer; }
+  .user-avatar { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; vertical-align: middle; margin-right: 8px; }
+  .user-name { font-weight: 500; }
+  .user-email { font-size: 11px; color: var(--muted); display: block; margin-top: 1px; }
+  .idle-meter { width: 100px; height: 5px; background: #1A2528; border-radius: 3px; overflow: hidden; }
+  .idle-meter i { display: block; height: 100%; background: var(--gold-dim); border-radius: 3px; transition: width 0.6s ease; width: 0%; }
+  .idle-meter.sev-2 i { background: var(--gold); }
+  .idle-meter.sev-3 i { background: var(--reap-bright); }
+  .idle-days { font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .risk-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .risk-high { background: rgba(168,64,46,0.2); color: var(--reap-bright); border: 1px solid rgba(168,64,46,0.3); }
+  .risk-med  { background: rgba(201,162,39,0.15); color: var(--gold); border: 1px solid rgba(201,162,39,0.25); }
+  .risk-low  { background: rgba(92,130,101,0.15); color: var(--sage-bright); border: 1px solid rgba(92,130,101,0.25); }
+  .risk-nodata { background: rgba(110,126,132,0.15); color: var(--muted-bright); border: 1px solid rgba(110,126,132,0.3); }
+
+  .status-badge { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; font-family: ui-monospace, monospace; }
+  .status-DISCOVERED { background: #1A2528; color: var(--muted-bright); }
+  .status-FLAGGED { background: rgba(201,162,39,0.2); color: var(--gold); }
+  .status-PENDING_APPROVAL { background: rgba(92,130,101,0.2); color: var(--sage-bright); }
+  .status-APPROVED { background: rgba(168,64,46,0.25); color: var(--reap-bright); }
+  .status-REJECTED { background: rgba(35,46,50,0.8); color: var(--muted); }
+
+  .details-drawer { font-size: 11px; color: var(--text-dim); background: var(--panel-raised); padding: 8px 12px; border-radius: var(--radius); margin-top: 4px; }
+
+  .bulk-actions { display: flex; align-items: center; gap: 10px; padding: 10px 0 14px; }
+  .bulk-lbl { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+  /* CHART */
+  .chart-section { margin: 32px 0; display: block; }
+  .chart-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 24px; }
+  .chart-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+  #savings-chart { width: 100%; display: block; }
+
+  /* TIMELINE */
+  .timeline { margin: 8px 0; display: block; }
+  .tl-item { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .tl-item:last-child { border-bottom: none; }
+  .tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+  .tl-dot.info    { background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
+  .tl-dot.danger  { background: var(--reap-bright); box-shadow: 0 0 6px var(--reap-glow); }
+  .tl-dot.success { background: var(--sage-bright); box-shadow: 0 0 6px var(--sage-glow); }
+  .tl-text { font-size: 13px; color: var(--text-dim); }
+  .tl-text strong { color: var(--text); }
+  .tl-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* SIGNOFF */
+  .signoff {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: rgba(12,16,18,0.97); backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line); padding: 18px 28px; display: none; z-index: 100;
+  }
+  .signoff.show { display: block; animation: slide-up 0.25s ease; }
+  @keyframes slide-up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .signoff-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .signoff-count { font-size: 22px; font-weight: 400; }
+  .signoff-count span { color: var(--gold); }
+  .signoff-detail { font-size: 13px; color: var(--muted-bright); margin-top: 2px; }
+  .signoff-detail b { color: var(--sage-bright); }
+  .confirm-box { display: flex; align-items: center; gap: 10px; }
+  .confirm-hint { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .confirm-box input[type=text] {
+    background: var(--ink); border: 1px solid var(--line-bright); color: var(--text);
+    padding: 9px 12px; border-radius: var(--radius); font-family: inherit; font-size: 14px;
+    font-weight: 700; width: 130px; letter-spacing: 0.08em; text-transform: uppercase;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .confirm-box input[type=text]:focus { outline: none; }
+  .confirm-box input[type=text].ready { border-color: var(--reap); box-shadow: 0 0 0 2px var(--reap-glow); }
+
+  /* TOASTS */
+  .toast-area { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+  .toast {
+    background: var(--panel-raised); border: 1px solid var(--sage); border-radius: var(--radius-lg);
+    padding: 14px 18px; font-size: 13px; max-width: 340px; pointer-events: all;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.55); animation: toast-in 0.3s ease;
+  }
+  .toast.toast-error { border-color: var(--reap-bright); }
+  .toast.toast-warn { border-color: var(--gold); }
+  @keyframes toast-in { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .toast-out { animation: toast-out 0.3s ease forwards; }
+  @keyframes toast-out { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+  .toast-title { font-weight: 600; margin-bottom: 4px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+  .toast-body { color: var(--text-dim); font-size: 12px; }
+
+  /* REAP OVERLAY */
+  #reap-overlay {
+    position: fixed; inset: 0; z-index: 300; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
+  }
+  #reap-overlay.show { display: flex; }
+  .reap-modal {
+    background: var(--panel); border: 1px solid var(--reap); border-radius: var(--radius-lg);
+    padding: 40px 48px; text-align: center; max-width: 420px;
+    box-shadow: 0 0 70px rgba(168,64,46,0.35);
+    animation: reap-modal-in 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes reap-modal-in { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .reap-skull { font-size: 52px; display: block; margin-bottom: 16px; animation: skull-bob 0.5s ease infinite alternate; }
+  @keyframes skull-bob { from { transform: translateY(0) rotate(-6deg); } to { transform: translateY(-6px) rotate(6deg); } }
+  .reap-title { font-size: 22px; font-weight: 400; margin-bottom: 8px; color: var(--reap-bright); }
+  .reap-sub { font-size: 14px; color: var(--text-dim); margin-bottom: 20px; }
+  .reap-savings { font-size: 40px; color: var(--sage-bright); margin: 16px 0; }
+
+  /* EMPTY NOTE */
+  .empty-note { padding: 16px 0 24px; font-size: 13px; color: var(--muted); }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .hero { grid-template-columns: 1fr; }
+    .mini-stats { grid-template-columns: repeat(2,1fr); }
+    .mini-stat { border-right: none; border-bottom: 1px solid var(--line); padding: 12px 0; }
+    .ledger-summary { grid-template-columns: 1fr 1fr; }
+    .platform-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="toast-area" id="toast-area"></div>
+
+<!-- Reap Modal Overlay -->
+<div id="reap-overlay">
+  <div class="reap-modal">
+    <span class="reap-skull">&#9760;</span>
+    <div class="reap-title">Candidates Approved</div>
+    <div class="reap-sub">Approval State Machine updated to APPROVED. (Read-only execution active)</div>
+    <div class="reap-savings mono" id="overlay-savings"></div>
+    <div style="font-size:13px;color:var(--muted)">monthly potential savings approved</div>
+    <button class="btn btn-primary" id="overlay-close" style="margin-top:28px;">&#10003; Back to dashboard</button>
+  </div>
+</div>
+
+<div class="app">
+  <!-- HEADER -->
+  <header>
+    <div class="wordmark serif">
+      <div class="scythe">&#9878;</div>
+      <div class="brand">SaaS <span>GrimReaper</span></div>
+    </div>
+    <div class="header-right">
+      <button class="notification-btn" id="notif-btn" title="Alerts">
+        &#128276;
+        <span class="notif-dot" id="notif-dot"></span>
+      </button>
+      <div class="lifetime-badge">
+        <div class="lbl">Reclaimed to date</div>
+        <span class="amt mono" id="lifetime-amt">$0<small style="font-size:11px">/mo</small></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <h1 class="serif">You&rsquo;re paying for seats <em>nobody&rsquo;s using.</em></h1>
+      <p>Connect your SaaS platforms, run a browser audit, and inspect real seat inactivity before taking approval decisions.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="scan-btn">
+          <span id="scan-icon">&#9889;</span>
+          <span id="scan-label">Run Platform Audits</span>
+        </button>
+        <button class="btn btn-ghost" id="settings-btn">&#9881;&#65039; Settings</button>
+      </div>
+    </div>
+    <div class="mini-stats" style="align-self:start;min-width:340px;">
+      <div class="mini-stat">
+        <div class="ms-val mono" id="ms-seats">0</div>
+        <div class="ms-lbl">Total seats</div>
+        <div class="ms-delta" id="ms-seats-d"></div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-val mono" id="ms-idle">0</div>
+        <div class="ms-lbl">Inactive Candidates</div>
+        <div class="ms-delta up" id="ms-idle-d"></div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-val mono danger" id="ms-waste" style="color:var(--reap-bright)">$0</div>
+        <div class="ms-lbl">Monthly waste</div>
+        <div class="ms-delta up" id="ms-waste-d"></div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-val mono safe" id="ms-saved" style="color:var(--sage-bright)">$0</div>
+        <div class="ms-lbl">Approved Savings</div>
+        <div class="ms-delta down" id="ms-saved-d"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLATFORMS & AUDIT CONTROLS -->
+  <section class="platforms-section">
+    <div class="section-header">
+      <div class="section-title">Platform Audit Controls</div>
+    </div>
+
+    <!-- Interactive Audit Controls -->
+    <div class="audit-inputs">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:12px;color:var(--muted)">GitHub Org:</span>
+        <input type="text" id="gh-org-input" value="acme-corp" placeholder="acme-corp">
+        <button class="btn btn-sm btn-primary" id="audit-gh-btn">&#9889; Audit GitHub</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-left:12px">
+        <span style="font-size:12px;color:var(--muted)">Slack Workspace:</span>
+        <input type="text" id="slack-slug-input" value="acme-corp" placeholder="acme-corp">
+        <button class="btn btn-sm btn-primary" id="audit-slack-btn">&#9889; Audit Slack</button>
+      </div>
+    </div>
+
+    <div class="platform-grid" id="platform-grid"></div>
+    <div class="scan-progress" id="scan-progress">
+      <div class="scan-progress-fill" id="scan-progress-fill"></div>
+    </div>
+  </section>
+
+  <!-- INSIGHT -->
+  <div class="insight-banner" id="insight-banner">
+    <div class="insight-icon">&#128248;</div>
+    <div class="insight-text" id="insight-text"></div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-section" id="chart-section">
+    <div class="chart-card">
+      <div class="chart-title">
+        <span>Projected monthly savings</span>
+        <div style="display:flex;gap:14px">
+          <span style="font-size:10px;color:var(--reap-bright)">&#9679; Potential Waste</span>
+          <span style="font-size:10px;color:var(--sage-bright)">&#9679; Approved Savings</span>
+        </div>
+      </div>
+      <canvas id="savings-chart" height="120"></canvas>
+    </div>
+  </div>
+
+  <!-- LEDGER -->
+  <section class="ledger" id="ledger">
+    <div class="ledger-summary">
+      <div class="stat-block">
+        <div class="stat-big mono danger" id="total-savings">$0</div>
+        <div class="stat-label">Monthly waste</div>
+        <div class="stat-sub" id="total-sub">0 seats checked</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-big mono warn" id="total-seats-wasted">0</div>
+        <div class="stat-label">Seats to reclaim</div>
+        <div class="stat-sub">flagged for offboarding</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-big mono safe" id="total-annual">$0</div>
+        <div class="stat-label">Annual impact</div>
+        <div class="stat-sub">if actioned today</div>
+      </div>
+      <div class="sparkline-wrap">
+        <div class="sparkline-label">7-day idle trend</div>
+        <canvas id="sparkline" width="120" height="46"></canvas>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-pill active" data-filter="all">All</button>
+      <button class="filter-pill" data-filter="high">&#128308; High risk</button>
+      <button class="filter-pill" data-filter="med">&#128993; Medium</button>
+      <button class="filter-pill" data-filter="low">&#128994; Low</button>
+      <button class="filter-pill" data-filter="nodata">&#9888; NO_DATA</button>
+      <div class="filter-search">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" id="user-search" placeholder="Search users&hellip;">
+      </div>
+    </div>
+
+    <!-- Candidate Seats Ledger Table -->
+    <div class="bulk-actions">
+      <button class="btn btn-sm btn-ghost" id="select-all-btn">&#9745; Select all</button>
+      <button class="btn btn-sm btn-ghost" id="select-none-btn">&#9744; Clear</button>
+      <button class="btn btn-sm btn-ghost" id="select-high-btn">&#128308; Select high-risk</button>
+      <span class="bulk-lbl" id="bulk-lbl">0 candidates selected</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="users">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Platform & User</th>
+            <th>Role</th>
+            <th>Last Activity</th>
+            <th>Risk & Reason</th>
+            <th>State</th>
+            <th class="num">Cost/mo</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="candidate-tbody">
+          <tr>
+            <td colspan="8" style="padding:24px;color:var(--muted);text-align:center">
+              No candidates loaded yet. Run a platform audit using GitHub or Slack above.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty-note">&#10022; Connect and audit your SaaS platforms to inspect member inactivity and compute real potential savings.</div>
+  </section>
+
+  <!-- TIMELINE / AUDIT TRAIL -->
+  <div class="timeline" id="timeline">
+    <div class="section-header" style="padding-top:28px;margin-bottom:0">
+      <div class="section-title">GrimReaper Audit Log</div>
+    </div>
+    <div id="timeline-list"></div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- SIGNOFF -->
+<div class="signoff" id="signoff">
+  <div class="signoff-inner">
+    <div>
+      <div class="signoff-count"><span id="selected-count">0</span> accounts selected</div>
+      <div class="signoff-detail">Reclaims <b id="selected-savings" class="mono">$0/mo</b> &mdash; <span id="selected-annual" class="mono"></span>/yr saved</div>
+    </div>
+    <div class="confirm-box">
+      <span class="confirm-hint">Type REAP to confirm</span>
+      <input type="text" id="confirm-input" placeholder="REAP" autocomplete="off">
+      <button class="btn btn-danger" id="reap-btn" disabled>&#9760; Approve Selected</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var candidates = [];
+  var auditLogs = [];
+  var activeFilter = 'all';
+  var searchQuery = '';
+  var approvedSavingsTotal = 0;
+
+  var platformsMap = {
+    github: { label: 'GitHub', icon: 'pi-gh', g: 'G', connected: true, seats: 0 },
+    slack:  { label: 'Slack',  icon: 'pi-slack', g: 'S', connected: true, seats: 0 },
+    figma:  { label: 'Figma',  icon: 'pi-figma', g: 'F', connected: false, seats: 0 },
+    notion: { label: 'Notion', icon: 'pi-notion', g: 'N', connected: false, seats: 0 },
+  };
+
+  /* PARTICLE BACKGROUND */
+  (function () {
+    var canvas = document.getElementById('bg-canvas');
+    var ctx = canvas.getContext('2d');
+    var pts = [];
+    var W, H;
+    function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+    resize(); window.addEventListener('resize', resize);
+    for (var i = 0; i < 55; i++) {
+      pts.push({ x: Math.random()*1920, y: Math.random()*1080, r: Math.random()*1.2+0.3, vx: (Math.random()-0.5)*0.2, vy: (Math.random()-0.5)*0.2, a: Math.random()*0.5+0.1 });
+    }
+    function draw() {
+      ctx.clearRect(0,0,W,H);
+      for (var i=0;i<pts.length;i++) {
+        for (var j=i+1;j<pts.length;j++) {
+          var dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, d=Math.sqrt(dx*dx+dy*dy);
+          if (d<140) { ctx.beginPath(); ctx.strokeStyle='rgba(201,162,39,'+(0.08*(1-d/140))+')'; ctx.lineWidth=0.5; ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y); ctx.stroke(); }
+        }
+      }
+      pts.forEach(function(p){
+        p.x+=p.vx; p.y+=p.vy;
+        if(p.x<0)p.x=W; if(p.x>W)p.x=0; if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle='rgba(201,162,39,'+p.a+')'; ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+
+  /* SPARKLINE */
+  function drawSparkline() {
+    var c = document.getElementById('sparkline');
+    var ctx = c.getContext('2d');
+    var flaggedCount = candidates.filter(function(c){ return c.risk.flagged; }).length;
+    var data = [1, 2, 2, 3, 3, Math.max(1, flaggedCount)];
+    var W=c.width, H=c.height, max=Math.max.apply(null,data);
+    ctx.clearRect(0,0,W,H);
+    var pts = data.map(function(v,i){ return {x:(i/(data.length-1))*W, y:H-(v/max)*(H-4)-2}; });
+    ctx.beginPath(); ctx.moveTo(pts[0].x,H);
+    pts.forEach(function(p){ctx.lineTo(p.x,p.y);}); ctx.lineTo(pts[pts.length-1].x,H); ctx.closePath();
+    ctx.fillStyle='rgba(168,64,46,0.2)'; ctx.fill();
+    ctx.beginPath();
+    pts.forEach(function(p,i){i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);});
+    ctx.strokeStyle='#C2543F'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+
+  /* SAVINGS CHART */
+  function drawSavingsChart(totalWaste, totalApproved) {
+    var c = document.getElementById('savings-chart');
+    var ctx = c.getContext('2d');
+    c.width = c.parentElement.offsetWidth - 48;
+    var W=c.width, H=120; c.height=H;
+    var months=['Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb'];
+    var waste=months.map(function(){return Math.round(totalWaste*(0.85+Math.random()*0.3));});
+    var saved=months.map(function(_,i){return Math.round((totalApproved||0));});
+    var pad={t:8,b:24,l:8,r:8};
+    var cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+    var maxV=Math.max(1, Math.max.apply(null,waste.concat(saved)))*1.15;
+    var bW=cW/months.length;
+    ctx.clearRect(0,0,W,H);
+    months.forEach(function(m,i){
+      var x=pad.l+i*bW;
+      var wH=(waste[i]/maxV)*cH, sH=(saved[i]/maxV)*cH;
+      ctx.fillStyle='rgba(168,64,46,0.4)';
+      ctx.beginPath(); ctx.roundRect(x+bW*0.08,pad.t+cH-wH,bW*0.42,wH,2); ctx.fill();
+      ctx.fillStyle='rgba(92,130,101,0.55)';
+      ctx.beginPath(); ctx.roundRect(x+bW*0.5,pad.t+cH-sH,bW*0.42,sH,2); ctx.fill();
+      ctx.fillStyle='rgba(110,126,132,0.6)'; ctx.font='9px ui-monospace,monospace';
+      ctx.textAlign='center'; ctx.fillText(m,x+bW/2,H-7);
+    });
+  }
+
+  /* RENDER PLATFORMS GRID */
+  function renderPlatformGrid() {
+    var grid = document.getElementById('platform-grid');
+    grid.innerHTML = '';
+    Object.keys(platformsMap).forEach(function(key) {
+      var p = platformsMap[key];
+      var count = candidates.filter(function(c){ return c.seat.platform === key; }).length;
+      var card = document.createElement('div');
+      card.className = 'plat-card' + (p.connected ? ' connected' : '');
+      card.id = 'plat-card-' + key;
+      card.innerHTML =
+        '<div class="shimmer"></div>' +
+        '<div class="plat-card-top"><div class="plat-icon '+p.icon+'">'+p.g+'</div><div class="plat-status-dot"></div></div>' +
+        '<div class="plat-name">'+p.label+'</div>' +
+        '<div class="plat-desc">'+(p.connected ? (count + ' seats audited') : 'Not connected')+'</div>' +
+        '<div class="plat-action">'+(p.connected ? '&#10003; Connected' : '+ Connect')+'</div>';
+      grid.appendChild(card);
+    });
+  }
+
+  /* COUNT-UP ANIMATION */
+  function countUp(el, target, prefix, suffix, duration) {
+    if (!el) return;
+    prefix = prefix || '';
+    suffix = suffix || '';
+    var startTime = null;
+    function step(ts) {
+      if (!startTime) startTime = ts;
+      var prog = Math.min((ts-startTime)/duration,1);
+      var ease = 1-Math.pow(1-prog,3);
+      el.textContent = prefix + Math.round(ease*target).toLocaleString() + suffix;
+      if (prog < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* RISK BADGE & INACTIVITY UI */
+  function riskBadge(cand) {
+    if (cand.risk.inactive_days === null || !cand.seat.last_activity) {
+      return '<span class="risk-badge risk-nodata">&#9888; NO_DATA</span>';
+    }
+    var l = cand.risk.risk_level.toLowerCase();
+    if (l === 'high')   return '<span class="risk-badge risk-high">&#9679; High</span>';
+    if (l === 'medium' || l === 'med') return '<span class="risk-badge risk-med">&#9679; Med</span>';
+    if (l === 'low')    return '<span class="risk-badge risk-low">&#9679; Low</span>';
+    return '<span class="risk-badge risk-nodata">&#9679; None</span>';
+  }
+
+  function initials(name) { return (name || 'U').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
+
+  /* FILTER CANDIDATES */
+  function filterCandidates() {
+    return candidates.filter(function(c) {
+      var isNoData = (c.risk.inactive_days === null || !c.seat.last_activity);
+      if (activeFilter === 'high' && c.risk.risk_level !== 'HIGH') return false;
+      if (activeFilter === 'med' && (c.risk.risk_level !== 'MEDIUM' && c.risk.risk_level !== 'MED')) return false;
+      if (activeFilter === 'low' && c.risk.risk_level !== 'LOW') return false;
+      if (activeFilter === 'nodata' && !isNoData) return false;
+      if (searchQuery) {
+        var q = searchQuery.toLowerCase();
+        var name = (c.seat.display_name || '').toLowerCase();
+        var email = (c.seat.email || '').toLowerCase();
+        var user = (c.seat.user_id || '').toLowerCase();
+        return name.includes(q) || email.includes(q) || user.includes(q);
+      }
+      return true;
+    });
+  }
+
+  /* RENDER CANDIDATES TABLE */
+  function renderCandidates() {
+    var tbody = document.getElementById('candidate-tbody');
+    tbody.innerHTML = '';
+    var vis = filterCandidates();
+
+    if (!vis.length) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td colspan="8" style="padding:20px;color:var(--muted);text-align:center">No seats match this filter.</td>';
+      tbody.appendChild(tr);
+      updateBulkLabel();
+      return;
+    }
+
+    vis.forEach(function(c) {
+      var tr = document.createElement('tr');
+      tr.id = 'row-' + c.seat.user_id;
+
+      var isNoData = (c.risk.inactive_days === null || !c.seat.last_activity);
+      var lastActText = isNoData ? '<span style="color:var(--muted)">NO_DATA</span>' : (c.risk.inactive_days + 'd ago');
+      var evidenceSrc = c.seat.metadata && c.seat.metadata.last_activity_source ? c.seat.metadata.last_activity_source : 'none';
+      var lastEvent = c.seat.metadata && c.seat.metadata.last_activity_event ? (' (' + c.seat.metadata.last_activity_event + ')') : '';
+
+      var avatarClass = c.seat.platform === 'github' ? 'av-gh' : 'av-slack';
+      var platformIcon = c.seat.platform === 'github' ? 'G' : 'S';
+
+      tr.innerHTML =
+        '<td><input type="checkbox" ' + (c.risk.flagged ? 'checked' : '') + ' data-id="' + c.seat.user_id + '" class="sel"></td>' +
+        '<td>' +
+          '<div style="display:flex;align-items:center">' +
+            '<span class="user-avatar ' + avatarClass + '">' + platformIcon + '</span>' +
+            '<div>' +
+              '<div class="user-name">' + c.seat.display_name + '</div>' +
+              '<span class="user-email">' + (c.seat.email || c.seat.user_id) + '</span>' +
+            '</div>' +
+          '</div>' +
+        '</td>' +
+        '<td><span class="mono" style="font-size:12px">' + c.seat.role + '</span></td>' +
+        '<td><span class="mono" style="font-size:12px">' + lastActText + '</span></td>' +
+        '<td>' +
+          riskBadge(c) +
+          '<div class="details-drawer">Source: <b>' + evidenceSrc + '</b>' + lastEvent + '<br>Reason: ' + c.risk.reason + '</div>' +
+        '</td>' +
+        '<td><span class="status-badge status-' + c.approval_state + '">' + c.approval_state + '</span></td>' +
+        '<td class="num mono" style="color:var(--reap-bright)">$' + c.seat.monthly_cost + '</td>' +
+        '<td style="text-align:right;white-space:nowrap">' +
+          '<button class="btn btn-sm btn-ghost btn-approve" data-id="' + c.seat.user_id + '" ' + (c.approval_state === 'APPROVED' ? 'disabled' : '') + '>Approve</button> ' +
+          '<button class="btn btn-sm btn-ghost btn-reject" data-id="' + c.seat.user_id + '" ' + (c.approval_state === 'REJECTED' ? 'disabled' : '') + '>Reject</button>' +
+        '</td>';
+
+      tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll('.sel').forEach(function(cb){ cb.addEventListener('change', updateSignoff); });
+    document.querySelectorAll('.btn-approve').forEach(function(btn){
+      btn.addEventListener('click', function(){ handleApproveCandidate(btn.dataset.id); });
+    });
+    document.querySelectorAll('.btn-reject').forEach(function(btn){
+      btn.addEventListener('click', function(){ handleRejectCandidate(btn.dataset.id); });
+    });
+
+    updateBulkLabel();
+  }
+
+  function updateBulkLabel() {
+    var all = document.querySelectorAll('.sel'), checked = document.querySelectorAll('.sel:checked');
+    var bl = document.getElementById('bulk-lbl');
+    if (bl) bl.textContent = checked.length + ' of ' + all.length + ' selected';
+  }
+
+  /* SIGNOFF & SELECTION */
+  function updateSignoff() {
+    var checked = Array.from(document.querySelectorAll('.sel:checked'));
+    var userIds = checked.map(function(cb){ return cb.dataset.id; });
+    var selectedSavings = candidates.filter(function(c){ return userIds.includes(c.seat.user_id); })
+                                    .reduce(function(sum, c){ return sum + c.seat.monthly_cost; }, 0);
+
+    document.getElementById('selected-count').textContent = userIds.length;
+    document.getElementById('selected-savings').textContent = '$' + selectedSavings + '/mo';
+    document.getElementById('selected-annual').textContent = '$' + (selectedSavings * 12).toLocaleString();
+
+    var sf = document.getElementById('signoff');
+    sf.classList.toggle('show', userIds.length > 0);
+    sf.dataset.ids = JSON.stringify(userIds);
+    sf.dataset.savings = selectedSavings;
+    updateBulkLabel();
+  }
+
+  /* FETCH DASHBOARD DATA */
+  async function refreshDashboard() {
+    try {
+      var res = await fetch('/api/dashboard');
+      if (!res.ok) throw new Error('Failed to fetch dashboard data');
+      var data = await res.json();
+
+      candidates = data.candidates || [];
+      auditLogs = data.logs || [];
+
+      var summary = data.summary || {};
+      var totalSeats = summary.total_seats || candidates.length;
+      var inactiveCandidatesCount = summary.inactive_candidates || candidates.filter(function(c){ return c.risk.flagged; }).length;
+      var monthlyWaste = summary.monthly_potential_savings || 0;
+      var annualImpact = summary.annual_potential_savings || 0;
+
+      // Update Header & Mini Stats
+      countUp(document.getElementById('ms-seats'), totalSeats, '', '', 500);
+      countUp(document.getElementById('ms-idle'), inactiveCandidatesCount, '', '', 600);
+      countUp(document.getElementById('ms-waste'), monthlyWaste, '$', '/mo', 700);
+      countUp(document.getElementById('total-savings'), monthlyWaste, '$', '', 700);
+      countUp(document.getElementById('total-seats-wasted'), inactiveCandidatesCount, '', '', 700);
+      countUp(document.getElementById('total-annual'), annualImpact, '$', '', 800);
+
+      document.getElementById('total-sub').textContent = totalSeats + ' total seats checked';
+      document.getElementById('ms-idle-d').textContent = totalSeats > 0 ? ('\u25B2 ' + Math.round((inactiveCandidatesCount / totalSeats) * 100) + '% of total') : '';
+      document.getElementById('ms-waste-d').textContent = inactiveCandidatesCount > 0 ? ('\u25B2 $' + (monthlyWaste / Math.max(1, inactiveCandidatesCount)).toFixed(0) + '/seat') : '';
+
+      // Insight Banner
+      var banner = document.getElementById('insight-banner');
+      if (monthlyWaste > 0) {
+        document.getElementById('insight-text').innerHTML =
+          '<strong>$' + monthlyWaste + '/month</strong> is currently flagged on <strong>' + inactiveCandidatesCount + ' inactive seat(s)</strong>. ' +
+          'That\u2019s <strong>$' + annualImpact.toLocaleString() + '/year</strong> in potential license savings.';
+        banner.classList.add('show');
+      } else {
+        banner.classList.remove('show');
+      }
+
+      renderPlatformGrid();
+      renderCandidates();
+      updateSignoff();
+      drawSparkline();
+      drawSavingsChart(monthlyWaste, approvedSavingsTotal);
+      renderTimeline();
+    } catch (err) {
+      addToast('Error', 'Could not refresh dashboard from GrimReaper backend', '&#9888;', 'toast-error');
+    }
+  }
+
+  /* AUDIT ACTIONS */
+  async function triggerGitHubAudit() {
+    var orgName = document.getElementById('gh-org-input').value.trim() || 'acme-corp';
+    var scanBtn = document.getElementById('scan-btn');
+    var progress = document.getElementById('scan-progress');
+    var fill = document.getElementById('scan-progress-fill');
+
+    scanBtn.disabled = true;
+    progress.classList.add('show');
+    fill.style.width = '40%';
+
+    addToast('GitHub Audit', 'Initiating Webcmd browser inspection for org ' + orgName, '&#9889;');
+
+    try {
+      var res = await fetch('/api/audit/github', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orgName: orgName })
+      });
+      fill.style.width = '80%';
+      var data = await res.json();
+      fill.style.width = '100%';
+
+      if (data.authRequired) {
+        addToast('Authentication Required', 'GitHub browser session requires human login for profile', '&#128274;', 'toast-warn');
+      } else if (data.summary && data.summary.audit_log_access_denied) {
+        addToast('Access Denied', 'Organization audit log access denied (Owner role required)', '&#9888;', 'toast-warn');
+      } else {
+        var count = data.summary ? data.summary.total_seats : 0;
+        var flagged = data.summary ? data.summary.flagged_seats : 0;
+        addToast('GitHub Audit Complete', 'Discovered ' + count + ' seats (' + flagged + ' flagged)', '&#9989;');
+      }
+    } catch (err) {
+      addToast('Audit Failed', err.message || 'GitHub audit failed', '&#9888;', 'toast-error');
+    } finally {
+      setTimeout(function(){
+        progress.classList.remove('show');
+        fill.style.width = '0%';
+        scanBtn.disabled = false;
+        refreshDashboard();
+      }, 300);
+    }
+  }
+
+  async function triggerSlackAudit() {
+    var workspaceSlug = document.getElementById('slack-slug-input').value.trim() || 'acme-corp';
+    var scanBtn = document.getElementById('scan-btn');
+    var progress = document.getElementById('scan-progress');
+    var fill = document.getElementById('scan-progress-fill');
+
+    scanBtn.disabled = true;
+    progress.classList.add('show');
+    fill.style.width = '40%';
+
+    addToast('Slack Audit', 'Initiating Webcmd browser inspection for workspace ' + workspaceSlug, '&#9889;');
+
+    try {
+      var res = await fetch('/api/audit/slack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceSlug: workspaceSlug })
+      });
+      fill.style.width = '80%';
+      var data = await res.json();
+      fill.style.width = '100%';
+
+      if (data.authRequired) {
+        addToast('Authentication Required', 'Slack browser session requires login for workspace', '&#128274;', 'toast-warn');
+      } else if (data.summary && data.summary.access_denied) {
+        addToast('Access Denied', 'Slack Admin Member directory access denied', '&#9888;', 'toast-warn');
+      } else {
+        var count = data.summary ? data.summary.total_seats : 0;
+        var flagged = data.summary ? data.summary.flagged_seats : 0;
+        addToast('Slack Audit Complete', 'Discovered ' + count + ' seats (' + flagged + ' flagged)', '&#9989;');
+      }
+    } catch (err) {
+      addToast('Audit Failed', err.message || 'Slack audit failed', '&#9888;', 'toast-error');
+    } finally {
+      setTimeout(function(){
+        progress.classList.remove('show');
+        fill.style.width = '0%';
+        scanBtn.disabled = false;
+        refreshDashboard();
+      }, 300);
+    }
+  }
+
+  /* APPROVAL & REJECTION ACTIONS VIA APPROVAL STATE MACHINE */
+  async function handleApproveCandidate(userId) {
+    try {
+      var res = await fetch('/api/candidates/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userId })
+      });
+      if (!res.ok) {
+        var errData = await res.json();
+        throw new Error(errData.error || 'Failed to approve candidate');
+      }
+      addToast('Candidate Approved', 'State machine updated candidate ' + userId + ' to APPROVED', '&#9989;');
+      refreshDashboard();
+    } catch (err) {
+      addToast('Approval Blocked', err.message, '&#9888;', 'toast-error');
+    }
+  }
+
+  async function handleRejectCandidate(userId) {
+    try {
+      var res = await fetch('/api/candidates/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userId, reason: 'Rejected via UI' })
+      });
+      if (!res.ok) {
+        var errData = await res.json();
+        throw new Error(errData.error || 'Failed to reject candidate');
+      }
+      addToast('Candidate Rejected', 'State machine updated candidate ' + userId + ' to REJECTED', '&#10060;');
+      refreshDashboard();
+    } catch (err) {
+      addToast('Rejection Failed', err.message, '&#9888;', 'toast-error');
+    }
+  }
+
+  /* OFFBOARDING EXECUTION VIA /api/candidates/execute */
+  async function handleExecuteCandidate(userId) {
+    try {
+      var res = await fetch('/api/candidates/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userId })
+      });
+      var data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Execution blocked by backend guardrails.');
+      }
+      var status = data.result ? data.result.status : 'EXECUTED';
+      var msg = data.result ? data.result.message : 'Action executed';
+      if (status === 'EXECUTED') {
+        addToast('Offboarding Executed', msg, '&#9760;');
+      } else {
+        addToast('Execution Result: ' + status, msg, '&#9888;', 'toast-warn');
+      }
+      refreshDashboard();
+    } catch (err) {
+      addToast('Execution Blocked', err.message, '&#9888;', 'toast-error');
+    }
+  }
+
+  /* TOAST & TIMELINE RENDERING */
+  function addToast(title, body, icon, extraClass) {
+    var area = document.getElementById('toast-area');
+    var t = document.createElement('div');
+    t.className = 'toast' + (extraClass ? (' ' + extraClass) : '');
+    t.innerHTML = '<div class="toast-title">' + (icon || '') + ' ' + title + '</div><div class="toast-body">' + body + '</div>';
+    area.appendChild(t);
+    setTimeout(function(){ t.classList.add('toast-out'); setTimeout(function(){ if(t.parentNode)area.removeChild(t); }, 350); }, 4500);
+  }
+
+  function renderTimeline() {
+    var list = document.getElementById('timeline-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (!auditLogs || !auditLogs.length) {
+      list.innerHTML = '<div class="tl-item"><div class="tl-text" style="color:var(--muted)">No audit trail records yet.</div></div>';
+      return;
+    }
+
+    auditLogs.slice().reverse().slice(0, 10).forEach(function(rec) {
+      var dotType = rec.action.includes('REJECTED') ? 'danger' : rec.action.includes('APPROVED') || rec.action.includes('COMPLETED') ? 'success' : 'info';
+      var d = document.createElement('div');
+      d.className = 'tl-item';
+      d.innerHTML =
+        '<div class="tl-dot ' + dotType + '"></div>' +
+        '<div class="tl-content">' +
+          '<div class="tl-text"><strong>' + rec.action + '</strong> &mdash; User: ' + rec.user_id + ' &mdash; ' + rec.risk_decision + '</div>' +
+          '<div class="tl-time">' + new Date(rec.timestamp).toLocaleTimeString() + '</div>' +
+        '</div>';
+      list.appendChild(d);
+    });
+  }
+
+  /* EVENT LISTENERS */
+  document.getElementById('scan-btn').addEventListener('click', function() {
+    triggerGitHubAudit();
+    setTimeout(triggerSlackAudit, 400);
+  });
+
+  document.getElementById('audit-gh-btn').addEventListener('click', triggerGitHubAudit);
+  document.getElementById('audit-slack-btn').addEventListener('click', triggerSlackAudit);
+
+  document.querySelectorAll('.filter-pill').forEach(function(pill) {
+    pill.addEventListener('click', function(){
+      document.querySelectorAll('.filter-pill').forEach(function(p){p.classList.remove('active');});
+      pill.classList.add('active');
+      activeFilter = pill.dataset.filter;
+      renderCandidates();
+    });
+  });
+
+  document.getElementById('user-search').addEventListener('input', function(e){
+    searchQuery = e.target.value.trim();
+    renderCandidates();
+  });
+
+  document.getElementById('select-all-btn').addEventListener('click', function(){
+    document.querySelectorAll('.sel').forEach(function(cb){cb.checked=true;});
+    updateSignoff();
+  });
+  document.getElementById('select-none-btn').addEventListener('click', function(){
+    document.querySelectorAll('.sel').forEach(function(cb){cb.checked=false;});
+    updateSignoff();
+  });
+  document.getElementById('select-high-btn').addEventListener('click', function(){
+    document.querySelectorAll('.sel').forEach(function(cb){
+      var cand = candidates.find(function(c){ return c.seat.user_id === cb.dataset.id; });
+      cb.checked = cand && cand.risk.risk_level === 'HIGH';
+    });
+    updateSignoff();
+  });
+
+  var confirmInput = document.getElementById('confirm-input');
+  var reapBtn = document.getElementById('reap-btn');
+  confirmInput.addEventListener('input', function(){
+    var match = confirmInput.value.trim().toUpperCase() === 'REAP';
+    reapBtn.disabled = !match;
+    confirmInput.classList.toggle('ready', match);
+  });
+
+  reapBtn.addEventListener('click', async function(){
+    var userIds = JSON.parse(document.getElementById('signoff').dataset.ids || '[]');
+    var savings = parseInt(document.getElementById('signoff').dataset.savings || '0', 10);
+
+    for (var i = 0; i < userIds.length; i++) {
+      var uid = userIds[i];
+      await handleExecuteCandidate(uid);
+    }
+
+    approvedSavingsTotal += savings;
+    document.getElementById('lifetime-amt').innerHTML = '$' + approvedSavingsTotal.toLocaleString() + '<small style="font-size:11px">/mo</small>';
+    countUp(document.getElementById('ms-saved'), approvedSavingsTotal, '$', '/mo', 800);
+
+    document.getElementById('overlay-savings').textContent = '$' + savings.toLocaleString();
+    document.getElementById('reap-overlay').classList.add('show');
+    document.getElementById('signoff').classList.remove('show');
+
+    confirmInput.value = '';
+    reapBtn.disabled = true;
+    confirmInput.classList.remove('ready');
+  });
+
+  document.getElementById('overlay-close').addEventListener('click', function(){
+    document.getElementById('reap-overlay').classList.remove('show');
+    addToast('Approval Completed', 'Selected seats set to APPROVED in State Machine. (Read-only execution active)', '&#2620;&#FE0F;');
+  });
+
+  document.getElementById('notif-btn').addEventListener('click', function(){
+    document.getElementById('notif-dot').style.display='none';
+    addToast('Alerts', 'GrimReaper state machine active & audit logging enabled.', '&#128276;');
+  });
+
+  document.getElementById('settings-btn').addEventListener('click', function(){
+    addToast('Settings', 'GrimReaper threshold: 90 days. Mode: Read-Only Audit.', '&#2699;&#FE0F;');
+  });
+
+  /* INIT */
+  renderPlatformGrid();
+  refreshDashboard();
+})();
+</script>
+</body>
+</html>
